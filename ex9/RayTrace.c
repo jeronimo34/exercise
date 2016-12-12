@@ -75,6 +75,7 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   // at the intersection point
   
   // Save the color of the intersected sphere in hit_color and hit_spec
+//I wanna go home.
 }
 
 
