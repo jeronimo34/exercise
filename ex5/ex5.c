@@ -100,7 +100,7 @@ void drawTextureCube(void)
 	};
 
 	static GLfloat uvs[6][4][2] = { 
-	{ { 0,0 },{ 0,1 },{ 1,1 },{ 1,0 } },//face0
+	{ { 0,0 },{ 1,0 },{ 1,1 },{ 0,1 } },//face0
 	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } },//face1
 	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } },//face2
 	{ { 0,0 },{ 0,1 },{ 1,1 },{ 1,0 } },//face3
@@ -182,17 +182,15 @@ void myDisplay(void) {
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
 	glPushMatrix();
-	glTranslatef(0.0f, 0.0f, -5.0f);
+
+	glTranslatef(0.0f, 0.f, -5.0f);
 	glRotatef(theta[0], 1.0, 0.0, 0.0);
 	glRotatef(theta[1], 0.0, 1.0, 0.0);
 	glRotatef(theta[2], 0.0, 0.0, 1.0);
 
 	/* Textured cube */
-	//glutSolidCube(1);
-
-	//drawTextureCube();
-	drawTextureTetrahedron();
-
+	//drawTextureTetrahedron();
+	drawTextureCube();
 	glPopMatrix();
 
 	glutSwapBuffers();
@@ -218,7 +216,7 @@ void myReshape(GLsizei w, GLsizei h) {
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (GLfloat)w / (GLfloat)h, 1.0, 20.0);
+	gluPerspective(60.0, (GLfloat)w / (GLfloat)h, 1.0, 1000.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -236,8 +234,9 @@ void initialize(void) {
 	readRawImage("bandai.raw", 256 * 256 * 3, bandaiData);
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	//make empty texture.
-	glGenTextures(2, texNames);
+	glGenTextures(3, texNames);
 
 	//make check texture and set parameters.
 	glBindTexture(GL_TEXTURE_2D, texNames[0]);
@@ -288,7 +287,7 @@ int main(int argc, char **argv) {
 	initialize();
 
 	glEnable(GL_DEPTH_TEST);
-
+	glCullFace(GL_FRONT_AND_BACK);
 	glutDisplayFunc(myDisplay);
 	glutReshapeFunc(myReshape);
 	glutKeyboardFunc(myKeyboard);
