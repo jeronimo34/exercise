@@ -148,6 +148,10 @@
   <ItemGroup>
     <ClCompile Include="ex5.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="bandai.raw" />
+    <None Include="fish.raw" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

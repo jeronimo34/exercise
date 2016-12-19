@@ -26,8 +26,6 @@ static GLubyte checkImage[IMAGE_HEIGHT][IMAGE_WIDTH][4];
 static GLubyte fishImageData[FISH_IMAGE_HEIGHT*FISH_IMAGE_WIDTH * 3];
 static GLubyte bandaiData[FISH_IMAGE_HEIGHT*FISH_IMAGE_WIDTH * 3];
 
-//static GLuint checkTex, fishTex;
-
 static GLuint texNames[3];//0 = check, 1 = fish.
 
 //add
@@ -101,23 +99,23 @@ void drawTextureCube(void)
 
 	static GLfloat uvs[6][4][2] = { 
 	{ { 0,0 },{ 1,0 },{ 1,1 },{ 0,1 } },//face0
-	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } },//face1
-	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } },//face2
-	{ { 0,0 },{ 0,1 },{ 1,1 },{ 1,0 } },//face3
-	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } },//face4
-	{ { 0,0 },{ 0,2 },{ 2,2 },{ 2,0 } }//face5
+	{ { 0,0 },{ 2,0 },{ 2,2 },{ 0,2 } },//face1
+	{ { 0,0 },{ 2,0 },{ 2,2 },{ 0,2 } },//face2
+	{ { 0,0 },{ 1,0 },{ 1,1 },{ 0,1 } },//face3
+	{ { 0,0 },{ 2,0 },{ 2,2 },{ 0,2 } },//face4
+	{ { 0,0 },{ 2,0 },{ 2,2 },{ 0,2 } }//face5
 	};
 
 	static GLint faces[6][4] = { 
-		{ 4,5,6,7 },{ 0,4,7,3 },{ 2,3,7,6 },
-		{ 6,5,1,2 },{ 0,1,5,4 },{0, 3, 2, 1}};
+		{ 4,5,6,7 },{ 0,4,7,3 },{ 3,7,6,2 },
+		{ 6,5,1,2 },{2, 1, 0, 3},{ 0,1,5,4 } };
 	int i;
 
-	glBindTexture(GL_TEXTURE_2D, texNames[0]);
+	glBindTexture(GL_TEXTURE_2D, texNames[1]);
 
 	for (i = 0; i < 6; ++i)
 	{
-		if (i == 3)glBindTexture(GL_TEXTURE_2D, texNames[1]);
+		if (i == 3)glBindTexture(GL_TEXTURE_2D, texNames[0]);
 
 		if (i == 1 || i == 4)
 		{
@@ -126,8 +124,8 @@ void drawTextureCube(void)
 		}
 		else if (i == 2 || i == 5)
 		{
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		}
 
 		glBegin(GL_POLYGON);
