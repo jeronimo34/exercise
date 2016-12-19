@@ -70,44 +70,59 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   //   sphere
   //   if there is more than one sphere intersected by the ray, save the sphere
   //   with the closest intersection point to the camera
-	Sphere sphere = scene._spheres[0];
-	Vector3 cameraPos = scene._camera;
-	Vector3 Usph, Xint, a_dUray;
+	Vector3 Usph, Xint, a_dUray, n_Usph, cameraTohitpos;
 	float a, b2, c, d, dot_res, r, eff;
 	float positive_d, negative_d;
 
-	sub(sphere._center, cameraPos, &Usph);
-	computeNorm(Usph, &c);
-	computeDotProduct(direction, Usph, &dot_res);
+	float closest_dist = INFINITY,tdist;
 
-	a = c * dot_res;
-	b2 = c*c - a*a;
-	r = sphere._radius; 
+	for (int i = 0; i < scene._number_spheres; ++i)
+	{
+		Sphere sphere = scene._spheres[i];
+		Vector3 cameraPos = scene._camera;
+		
+		sub(sphere._center, cameraPos, &Usph);
+		computeNorm(Usph, &c);
+		normalize(Usph, &n_Usph);
+		computeDotProduct(direction, n_Usph, &dot_res);
 
-	if (r*r - b2 >= 0) {
-		//intersect object.
-		d = sqrt(r*r - b2);
-		eff = a - d;
+		a = c * dot_res;
+		b2 = c*c - a*a;
+		r = sphere._radius;
 
-		//Xint is position of intersection.
-		//Xint = Xray + (a-d)Uray.
-		mulAV(eff, direction, &a_dUray);
-		add(cameraPos, a_dUray, &Xint);
+		if (r*r - b2 >= 0) {
+			//intersect object.
+			d = sqrt(r*r - b2);
+			eff = a - d;
 
-		// Determine the intersection coordinates and the normal to the surface
-		// at the intersection point
-		(*hit_pos) = Xint;
-		printf("(%f, %f, %f)\n", direction._x, direction._y, direction._z);
-		printf("%f\n", eff);
+			//Xint is position of intersection.
+			//Xint = Xray + (a-d)Uray.
+			mulAV(eff, direction, &a_dUray);
+			add(cameraPos, a_dUray, &Xint);
 
-		sub(Xint,sphere._center,hit_normal);
-		normalize(*hit_normal, hit_normal);
+			
+			sub(Xint, cameraPos, &cameraTohitpos);
+			computeNorm(cameraTohitpos,&tdist);
+			
+			if (tdist <= closest_dist)
+			{
+				closest_dist = tdist;
 
-		// Save the color of the intersected sphere in hit_color and hit_spec
-		*hit_color = sphere._color;
-		*hit_spec = sphere._color_spec;
-		return 1;
+				// Determine the intersection coordinates and the normal to the surface
+				// at the intersection point
+				(*hit_pos) = Xint;
+				sub(Xint, sphere._center, hit_normal);
+				normalize(*hit_normal, hit_normal);
+
+				// Save the color of the intersected sphere in hit_color and hit_spec
+				*hit_color = sphere._color;
+				*hit_spec = sphere._color_spec;
+			}
+		}
 	}
+
+
+	if (closest_dist != INFINITY)return 1;
 	//no intersection.
 	return 0;
 }
@@ -188,21 +203,20 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
   {
 	  for (int x = 0; x < width; ++x)
 	  {
-		  float px = 10 * 2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
-		  float py = 10 * 2 * (y - (height - 1) / 2.0) / (height - 1);//s * y(i)
+		  float px = 8*2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
+		  float py = 8*2 * (y - (height - 1) / 2.0) / (height - 1.0);//s * y(i)
 
 		  Vector3 dir,n_dir;
 		  Vector3 hit_pos, hit_normal;
 		  Color hit_color, hit_spec;
-		  Color t_color = {1,0,0};
 		  dir._x = px - camera_pos._x;
 		  dir._y = py - camera_pos._y;
 		  dir._z = -camera_pos._z;
 
-		  normalize(dir, &n_dir);
+		  normalize(dir, &dir);
 
 		  int idx = x + y * width;
-		  int intersected = searchIntersectionWithScene(scene, n_dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
+		  int intersected = searchIntersectionWithScene(scene, dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
 
 		  if (intersected)
 		  {
@@ -213,7 +227,7 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 			  Vector3 l_pos = light._light_pos;
 
 			  float ln, rv, shineness = 128, l_dot_n;
-			  Vector3 nL, nV, nR, L, V, R, _2NLN;
+			  Vector3 L, V, R, _2NLN;
 
 			  //Light Vector
 			  sub(l_pos, hit_pos,  &L);
@@ -243,9 +257,9 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 			  };
 
 			  Color diff = {
-				  /*l_color._red * hit_color._red */ ln,
-				  /*l_color._green * hit_color._green */ ln,
-				  /*l_color._blue * hit_color._blue */ ln
+				  l_color._red * hit_color._red * ln,
+				  l_color._green * hit_color._green * ln,
+				  l_color._blue * hit_color._blue * ln
 			  };
 
 			  Color spec = {
@@ -264,7 +278,7 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 		  }
 		  else
 		  {
-			//intersected object is null, set background color.
+			//intersected object is null. set background color.
 			image[y][x] = scene._background_color;
 		  }
 	  }
