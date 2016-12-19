@@ -44,7 +44,7 @@ void DrawCube() {
 
 	/* set materials for cube */
 	GLfloat mat_diff[] = { 0, 1, 0, 1 };
-	GLfloat mat_spec[] = { 0.5, 0.5, 0.5, 1.0 };
+	GLfloat mat_spec[] = { 1, 1, 1, 1.0 };
 	GLfloat mat_shininess = 64.0f;
 
 	/* set materials for sphere */
@@ -63,7 +63,7 @@ void SetLight() {
 	GLfloat light0_diff[] = { 1.f, 0.f, 0.f, 1.f };
 	GLfloat light1_diff[] = { 0.f, 0.5f, 1.f, 1.f };
 	GLfloat light_spec[] = {1.f, 1.f, 1.f, 1.f};
-	GLfloat light0_pos[] = { 3, 3, 3, 1 };
+	GLfloat light0_pos[] = { 3, 3, 3, 0 };
 	GLfloat light1_pos[] = { -3, -3, 3, 1 };
 
 	//light0
@@ -74,7 +74,7 @@ void SetLight() {
 	glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
 
 	//light1
-	glEnable(GL_LIGHT1);
+	//glEnable(GL_LIGHT1);
 	glLightfv(GL_LIGHT1, GL_AMBIENT, light_amb);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diff);
 	glLightfv(GL_LIGHT1, GL_SPECULAR, light_spec);
@@ -100,7 +100,6 @@ void displayCallback(void)
 	glTranslatef(0.0, 0.0, -3.0);
 	DrawGridPlane();
 	glPopMatrix();
-
 	DrawSphere();
 
 	//DrawCube();
@@ -139,7 +138,7 @@ void initGL(void)
 
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 
-	glShadeModel(GL_FLAT);
+	//glShadeModel(GL_FLAT);
 	//glShadeModel(GL_SMOOTH);
 
 	glEnable(GL_LIGHTING);

@@ -7,6 +7,7 @@
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "Scene.h"
 #include "RayTrace.h"
@@ -69,13 +70,46 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   //   sphere
   //   if there is more than one sphere intersected by the ray, save the sphere
   //   with the closest intersection point to the camera
-	
-	
-  // Determine the intersection coordinates and the normal to the surface
-  // at the intersection point
-  
-  // Save the color of the intersected sphere in hit_color and hit_spec
-//I wanna go home.
+	Sphere sphere = scene._spheres[0];
+	Vector3 cameraPos = scene._camera;
+	Vector3 Usph, Xint, a_dUray;
+	float a, b2, c, d, dot_res, r, eff;
+	float positive_d, negative_d;
+
+	sub(sphere._center, cameraPos, &Usph);
+	computeNorm(Usph, &c);
+	computeDotProduct(direction, Usph, &dot_res);
+
+	a = c * dot_res;
+	b2 = c*c - a*a;
+	r = sphere._radius; 
+
+	if (r*r - b2 >= 0) {
+		//intersect object.
+		d = sqrt(r*r - b2);
+		eff = a - d;
+
+		//Xint is position of intersection.
+		//Xint = Xray + (a-d)Uray.
+		mulAV(eff, direction, &a_dUray);
+		add(cameraPos, a_dUray, &Xint);
+
+		// Determine the intersection coordinates and the normal to the surface
+		// at the intersection point
+		(*hit_pos) = Xint;
+		printf("(%f, %f, %f)\n", direction._x, direction._y, direction._z);
+		printf("%f\n", eff);
+
+		sub(Xint,sphere._center,hit_normal);
+		normalize(*hit_normal, hit_normal);
+
+		// Save the color of the intersected sphere in hit_color and hit_spec
+		*hit_color = sphere._color;
+		*hit_spec = sphere._color_spec;
+		return 1;
+	}
+	//no intersection.
+	return 0;
 }
 
 
@@ -154,22 +188,84 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
   {
 	  for (int x = 0; x < width; ++x)
 	  {
-		  double px = x;
-		  double py = y;
-		  Vector3 dir = {x-camera_pos._x,y-camera_pos._y,-camera_pos._z},
-			      hit_pos, hit_normal, hit_color, hit_spec;
-		  
-		  int idx = x + y * width;
-		  int res = searchIntersectionWithScene(scene, dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
+		  float px = 10 * 2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
+		  float py = 10 * 2 * (y - (height - 1) / 2.0) / (height - 1);//s * y(i)
 
-		  if (res == 1)
+		  Vector3 dir,n_dir;
+		  Vector3 hit_pos, hit_normal;
+		  Color hit_color, hit_spec;
+		  Color t_color = {1,0,0};
+		  dir._x = px - camera_pos._x;
+		  dir._y = py - camera_pos._y;
+		  dir._z = -camera_pos._z;
+
+		  normalize(dir, &n_dir);
+
+		  int idx = x + y * width;
+		  int intersected = searchIntersectionWithScene(scene, n_dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
+
+		  if (intersected)
 		  {
 			  //set the ambient component
+			  //computes the pixel intensity by applying the Phong illumination model.
+			  Light light = scene._lights[0];
+			  Color l_color = light._light_color;
+			  Vector3 l_pos = light._light_pos;
+
+			  float ln, rv, shineness = 128, l_dot_n;
+			  Vector3 nL, nV, nR, L, V, R, _2NLN;
+
+			  //Light Vector
+			  sub(l_pos, hit_pos,  &L);
+			  normalize(L, &L);
+			  
+			  //Camera Vec
+			  sub(camera_pos, hit_pos, &V);
+			  normalize(V, &V);
+
+			  //reflected vector
+			  //R = L - 2N(L.N).
+			  computeDotProduct(L, hit_normal, &l_dot_n);
+			  mulAV(2*l_dot_n, hit_normal, &_2NLN);
+			  sub(L, _2NLN, &R);
+
+			  //last_color = sigma[Kd(LiN)+Ks(RiV)^n]ILi
+			  //LiN
+			  computeDotProduct(L, hit_normal, &ln);
+
+			  //RiV
+			  computeDotProduct(R, hit_normal, &rv);
+
+			  Color amb = {
+				  scene._ambient._red * hit_color._red,
+				  scene._ambient._green * hit_color._green,
+				  scene._ambient._blue * hit_color._blue
+			  };
+
+			  Color diff = {
+				  /*l_color._red * hit_color._red */ ln,
+				  /*l_color._green * hit_color._green */ ln,
+				  /*l_color._blue * hit_color._blue */ ln
+			  };
+
+			  Color spec = {
+				  l_color._red * hit_spec._red * pow(rv, shineness),
+				  l_color._green * hit_spec._green * pow(rv, shineness),
+				  l_color._blue * hit_spec._blue * pow(rv, shineness) };
+
+			  Color last_color = {
+				  amb._red + diff._red + spec._red,
+				  amb._green + diff._green + spec._green,
+				  amb._blue + diff._blue + spec._blue};
+
+			  clampColor(&last_color);
+
+			  image[y][x] = last_color;
 		  }
 		  else
 		  {
-			//
-			
+			//intersected object is null, set background color.
+			image[y][x] = scene._background_color;
 		  }
 	  }
   }

@@ -18,7 +18,8 @@
 
 static GLfloat theta[] = { 0.0,0.0,0.0 };
 
-static GLfloat vertices[][3] = { { -1.0,-1.0,-1.0 },{ 1.0,-1.0,-1.0 },
+static GLfloat vertices[][3] = 
+{ { -1.0,-1.0,-1.0 },{ 1.0,-1.0,-1.0 },
 { 1.0,1.0,-1.0 },{ -1.0,1.0,-1.0 },{ -1.0,-1.0,1.0 },
 { 1.0,-1.0,1.0 },{ 1.0,1.0,1.0 },{ -1.0,1.0,1.0 } };
 
@@ -43,6 +44,7 @@ void makeCheckImage(void)
 		}
 	}
 }
+
 //texture tetrahedron
 void drawTextureTetrahedron(void)
 {
@@ -233,7 +235,7 @@ void initialize(void) {
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	//make empty texture.
+	//make texture names.
 	glGenTextures(3, texNames);
 
 	//make check texture and set parameters.

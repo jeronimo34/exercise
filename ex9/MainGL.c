@@ -12,8 +12,8 @@
 #include "RayTrace.h"
 
 
-GLint g_width = 512;
-GLint g_height = 512;
+GLint g_width =  512;
+GLint g_height =  512;
 GLuint g_tex_id;
 
 
