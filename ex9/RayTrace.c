@@ -70,11 +70,9 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   //   sphere
   //   if there is more than one sphere intersected by the ray, save the sphere
   //   with the closest intersection point to the camera
-	Vector3 Usph, Xint, a_dUray, n_Usph, cameraTohitpos;
+	Vector3 Usph, Xint, a_dUray, cameraTohitpos;
 	float a, b2, c, d, dot_res, r, eff;
-	float positive_d, negative_d;
-
-	float closest_dist = INFINITY,tdist;
+	float closest_dist = INFINITY, tdist;
 
 	for (int i = 0; i < scene._number_spheres; ++i)
 	{
@@ -83,8 +81,8 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
 		
 		sub(sphere._center, cameraPos, &Usph);
 		computeNorm(Usph, &c);
-		normalize(Usph, &n_Usph);
-		computeDotProduct(direction, n_Usph, &dot_res);
+		normalize(Usph, &Usph);
+		computeDotProduct(direction, Usph, &dot_res);
 
 		a = c * dot_res;
 		b2 = c*c - a*a;
@@ -206,7 +204,7 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 		  float px = 8*2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
 		  float py = 8*2 * (y - (height - 1) / 2.0) / (height - 1.0);//s * y(i)
 
-		  Vector3 dir,n_dir;
+		  Vector3 dir;
 		  Vector3 hit_pos, hit_normal;
 		  Color hit_color, hit_spec;
 		  dir._x = px - camera_pos._x;
@@ -215,7 +213,6 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 
 		  normalize(dir, &dir);
 
-		  int idx = x + y * width;
 		  int intersected = searchIntersectionWithScene(scene, dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
 
 		  if (intersected)
