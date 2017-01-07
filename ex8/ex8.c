@@ -6,15 +6,17 @@
  
 #include <stdlib.h>
 #include <time.h>
+#include <stdio.h>
+
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 int BAR,SWING;
-int g_anglur_speed_mode = 0;//0 liner, 1 sin
 double g_angle = 0;
-double g_angle_dir = 1;
-double g_previous_time;
+double g_previous_time, g_start_time;
+int g_anglur_speed_mode = 0;//0 liner, 1 sin
 double fps = 20;//frame/second
-double g_time_step_duration;
-double T = 2;
+double T = 2;//the swing period
 
 void makeBar() 
 {
@@ -128,6 +130,7 @@ void reshape(int width, int height)
   gluLookAt(150.0, 20.0, 40.0, 0.0, -10.0, 0.0, 0.0, 1.0, 0.0);
 
   g_previous_time = clock();
+  g_start_time = g_previous_time;
 }
  
 static void keyboard(unsigned char key, int x, int y)
@@ -135,15 +138,34 @@ static void keyboard(unsigned char key, int x, int y)
   switch(key) {
   case 27:  exit(EXIT_SUCCESS);
     break;
+  case 'F':
+	  fps++;
+	  break;
+  case 'f':
+	  if (--fps < 1)fps = 1;
+	  break;
+  case 'T':
+	  T++;
+	  break;
+  case 't':
+	  if (--T < 1)T = 1;
+	  break;
+  case 'c':
+	  g_anglur_speed_mode = !g_anglur_speed_mode;
+	  break;
   default:
     break;
   }
+
 }
  
 void display(void) 
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+  
+  glLoadIdentity();
+  gluLookAt(150.0, 20.0, 40.0, 0.0, -10.0, 0.0, 0.0, 1.0, 0.0);
+
     glCallList(BAR);
 	
 	glTranslated(0, 30, 0);
@@ -158,30 +180,32 @@ void display(void)
 
 void idle()
 {
-	g_time_step_duration = 1000 / fps;
-	while ((clock() - g_previous_time) / CLOCKS_PER_SEC < g_time_step_duration / 1000);
+	static double p = 0;//process parameter
 
-	double p = k / (T*fps);
-	if (g_anglur_speed_mode == 0) {
-		g_angle += g_angle_dir;
-		if (g_angle > 40) {
-			g_angle = 40;
-			g_angle_dir = -1;
-		}
-		else if(g_angle < -40)
-		{
-			g_angle = -40;
-			g_angle_dir = 1;
-		}
-	}
-	else
-	{
+	while ((clock() - g_previous_time) / CLOCKS_PER_SEC < 1.0/fps);
 	
+	p += 1.0 / (T*fps);
+	if (p > 1.0)p = 0;
+
+	if (g_anglur_speed_mode == 0) {
+		//liner interpolation
+		if (p < 0.5)g_angle = 160 * p - 40;
+		else g_angle = -160 * p + 120;
+	}
+	else {
+		//sin low
+		g_angle = 40*sin(2.0*M_PI*p);
 	}
 	g_previous_time = clock();
 
-	glLoadIdentity();
-	gluLookAt(150.0, 20.0, 40.0, 0.0, -10.0, 0.0, 0.0, 1.0, 0.0);
+	//show info
+	double time = (clock() - g_start_time) / CLOCKS_PER_SEC;
+	system("@cls");
+	printf("time: %fs\n", time);
+	printf("T: %fs\n",T);
+	printf("fps: %f\n", fps);
+	printf("mode: %d\n",g_anglur_speed_mode);
+	 
 	glutPostRedisplay();
 }
  

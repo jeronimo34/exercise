@@ -1,0 +1,8 @@
+all: rtviewer
+
+rtviewer: MainGL.c Distance.h Distance.c Geometry.c Geometry.h Parameters.h Parameters.c RayTrace.c RayTrace.h Constants.h
+	gcc -g -framework GLUT -framework OpenGL -o rtviewer MainGL.c Geometry.c RayTrace.c Distance.c Parameters.c
+
+clean:
+	rm rtviewer 
+

@@ -119,7 +119,6 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
 		}
 	}
 
-
 	if (closest_dist != INFINITY)return 1;
 	//no intersection.
 	return 0;
@@ -214,10 +213,9 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 		  normalize(dir, &dir);
 
 		  int intersected = searchIntersectionWithScene(scene, dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
+		  if (!intersected)continue;
 
-		  if (intersected)
-		  {
-			  //set the ambient component
+		    //set the ambient component
 			  //computes the pixel intensity by applying the Phong illumination model.
 			  Light light = scene._lights[0];
 			  Color l_color = light._light_color;
@@ -272,12 +270,6 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 			  clampColor(&last_color);
 
 			  image[y][x] = last_color;
-		  }
-		  else
-		  {
-			//intersected object is null. set background color.
-			image[y][x] = scene._background_color;
-		  }
 	  }
   }
 	
