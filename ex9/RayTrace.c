@@ -62,7 +62,6 @@ static void clampColor(Color* c) {
 // - the diffuse color and specular color of the intersected sphere
 // in hit_color and hit_spec
 static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* hit_pos, Vector3* hit_normal, Color* hit_color, Color* hit_spec) {
-
   // COMPLETE
   
   // For each sphere in the scene
@@ -70,52 +69,55 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   //   sphere
   //   if there is more than one sphere intersected by the ray, save the sphere
   //   with the closest intersection point to the camera
-	Vector3 Usph, Xint, a_dUray, cameraTohitpos;
-	float a, b2, c, d, dot_res, r, eff;
 	float closest_dist = INFINITY, tdist;
 
-	for (int i = 0; i < scene._number_spheres; ++i)
+	Vector3 co;
+	float dot;
+	float D;
+
+	for (int i = 0; i < 1/*scene._number_spheres*/; ++i)
 	{
 		Sphere sphere = scene._spheres[i];
-		Vector3 cameraPos = scene._camera;
+		Vector3 origin = scene._camera;
+		Vector3 temp_hit_pos;
+		float radius = sphere._radius;
+		float ts, te, t;
 		
-		sub(sphere._center, cameraPos, &Usph);
-		computeNorm(Usph, &c);
-		normalize(Usph, &Usph);
-		computeDotProduct(direction, Usph, &dot_res);
+		sub(sphere._center, origin, &co);
+		computeDotProduct(co, co, &D);//c*c
+		computeDotProduct(direction, co, &dot);//a
+		D = radius*radius-(D - dot*dot);//r*r - (c*c-a*a)
+		
+		//no intersection
+		if (D < 0.0) continue;
+		
+		ts = dot - sqrtf(D);
+		te = dot + sqrtf(D);
 
-		a = c * dot_res;
-		b2 = c*c - a*a;
-		r = sphere._radius;
+		if (ts < 0 && te < 0)continue;
+		else if (ts < 0)t = te;
+		else if (te < 0)t = ts;
+		else t = min(te, ts);
+		
+		//get temp_hit_pos
+		mulAV(t, direction, &temp_hit_pos);
+		add(temp_hit_pos, origin, &temp_hit_pos);
+		computeNorm(temp_hit_pos, &tdist);
 
-		if (r*r - b2 >= 0) {
-			//intersect object.
-			d = sqrt(r*r - b2);
-			eff = a - d;
+		//intersect object.
+		if (tdist <= closest_dist)
+		{
+			closest_dist = tdist;
 
-			//Xint is position of intersection.
-			//Xint = Xray + (a-d)Uray.
-			mulAV(eff, direction, &a_dUray);
-			add(cameraPos, a_dUray, &Xint);
+			// Determine the intersection coordinates and the normal to the surface
+			// at the intersection point
+			(*hit_pos) = temp_hit_pos;
+			sub(*hit_pos, sphere._center, hit_normal);
+			normalize(*hit_normal, hit_normal);
 
-			
-			sub(Xint, cameraPos, &cameraTohitpos);
-			computeNorm(cameraTohitpos,&tdist);
-			
-			if (tdist <= closest_dist)
-			{
-				closest_dist = tdist;
-
-				// Determine the intersection coordinates and the normal to the surface
-				// at the intersection point
-				(*hit_pos) = Xint;
-				sub(Xint, sphere._center, hit_normal);
-				normalize(*hit_normal, hit_normal);
-
-				// Save the color of the intersected sphere in hit_color and hit_spec
-				*hit_color = sphere._color;
-				*hit_spec = sphere._color_spec;
-			}
+			// Save the color of the intersected sphere in hit_color and hit_spec
+			*hit_color = sphere._color;
+			*hit_spec = sphere._color_spec;
 		}
 	}
 
@@ -200,12 +202,13 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
   {
 	  for (int x = 0; x < width; ++x)
 	  {
-		  float px = 8*2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
-		  float py = 8*2 * (y - (height - 1) / 2.0) / (height - 1.0);//s * y(i)
+		  float px = 8 * 2 * (x - (width - 1) / 2.0) / (width - 1.0);//s * x(i)
+		  float py = 8 * 2 * (y - (height - 1) / 2.0) / (height - 1.0);//s * y(i)
 
 		  Vector3 dir;
 		  Vector3 hit_pos, hit_normal;
 		  Color hit_color, hit_spec;
+		  
 		  dir._x = px - camera_pos._x;
 		  dir._y = py - camera_pos._y;
 		  dir._z = -camera_pos._z;
@@ -215,61 +218,61 @@ void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
 		  int intersected = searchIntersectionWithScene(scene, dir, &hit_pos, &hit_normal, &hit_color, &hit_spec);
 		  if (!intersected)continue;
 
-		    //set the ambient component
-			  //computes the pixel intensity by applying the Phong illumination model.
-			  Light light = scene._lights[0];
-			  Color l_color = light._light_color;
-			  Vector3 l_pos = light._light_pos;
+		  //set the ambient component
+			//computes the pixel intensity by applying the Phong illumination model.
+		  Light light = scene._lights[0];
+		  Color l_color = light._light_color;
+		  Vector3 l_pos = light._light_pos;
 
-			  float ln, rv, shineness = 128, l_dot_n;
-			  Vector3 L, V, R, _2NLN;
+		  float ln, rv, shineness = 128, l_dot_n;
+		  Vector3 L, V, R, _2NLN;
 
-			  //Light Vector
-			  sub(l_pos, hit_pos,  &L);
-			  normalize(L, &L);
-			  
-			  //Camera Vec
-			  sub(camera_pos, hit_pos, &V);
-			  normalize(V, &V);
+		  //Light Vector
+		  sub(l_pos, hit_pos, &L);
+		  normalize(L, &L);
 
-			  //reflected vector
-			  //R = L - 2N(L.N).
-			  computeDotProduct(L, hit_normal, &l_dot_n);
-			  mulAV(2*l_dot_n, hit_normal, &_2NLN);
-			  sub(L, _2NLN, &R);
+		  //Camera Vec
+		  sub(camera_pos, hit_pos, &V);
+		  normalize(V, &V);
 
-			  //last_color = sigma[Kd(LiN)+Ks(RiV)^n]ILi
-			  //LiN
-			  computeDotProduct(L, hit_normal, &ln);
+		  //reflected vector
+		  //R = L - 2N(L.N).
+		  computeDotProduct(L, hit_normal, &l_dot_n);
+		  mulAV(2 * l_dot_n, hit_normal, &_2NLN);
+		  sub(L, _2NLN, &R);
 
-			  //RiV
-			  computeDotProduct(R, hit_normal, &rv);
+		  //last_color = sigma[Kd(LiN)+Ks(RiV)^n]ILi
+		  //LiN
+		  computeDotProduct(L, hit_normal, &ln);
 
-			  Color amb = {
-				  scene._ambient._red * hit_color._red,
-				  scene._ambient._green * hit_color._green,
-				  scene._ambient._blue * hit_color._blue
-			  };
+		  //RiV
+		  computeDotProduct(R, hit_normal, &rv);
 
-			  Color diff = {
-				  l_color._red * hit_color._red * ln,
-				  l_color._green * hit_color._green * ln,
-				  l_color._blue * hit_color._blue * ln
-			  };
+		  Color amb = {
+			  scene._ambient._red * hit_color._red,
+			  scene._ambient._green * hit_color._green,
+			  scene._ambient._blue * hit_color._blue
+		  };
 
-			  Color spec = {
-				  l_color._red * hit_spec._red * pow(rv, shineness),
-				  l_color._green * hit_spec._green * pow(rv, shineness),
-				  l_color._blue * hit_spec._blue * pow(rv, shineness) };
+		  Color diff = {
+			  l_color._red * hit_color._red * ln,
+			  l_color._green * hit_color._green * ln,
+			  l_color._blue * hit_color._blue * ln
+		  };
 
-			  Color last_color = {
-				  amb._red + diff._red + spec._red,
-				  amb._green + diff._green + spec._green,
-				  amb._blue + diff._blue + spec._blue};
+		  Color spec = {
+			  l_color._red * hit_spec._red * pow(rv, shineness),
+			  l_color._green * hit_spec._green * pow(rv, shineness),
+			  l_color._blue * hit_spec._blue * pow(rv, shineness) };
 
-			  clampColor(&last_color);
+		  Color last_color = {
+			  amb._red + diff._red + spec._red,
+			  amb._green + diff._green + spec._green,
+			  amb._blue + diff._blue + spec._blue };
 
-			  image[y][x] = last_color;
+		  clampColor(&last_color);
+
+		  image[y][x] = last_color;
 	  }
   }
 	
