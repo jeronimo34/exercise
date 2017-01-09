@@ -1,0 +1,14 @@
+C = gcc
+
+LDLIBS = -lglut -lGL -lGLU -lXmu -lX11  -lm
+INC_PATH = /usr/local/include
+LIB_PATH = /usr/local/lib
+
+all: mesh_viewer
+
+mesh_viewer: MainGL.c Geometry.h Geometry.c TriangleMesh.h TriangleMesh.c
+	$(C) -O3 -I$(INC_PATH) -L$(LIB_PATH) $(LDLIBS) -o mesh_viewer MainGL.c Geometry.c TriangleMesh.c
+
+clean:
+	rm mesh_viewer
+

@@ -10,6 +10,8 @@
 #include "Parameters.h"
 #include "RayTrace.h"
 
+#include <stdio.h>
+#include <math.h>
 
 GLint g_width = 512;
 GLint g_height = 512;
