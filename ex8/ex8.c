@@ -178,6 +178,11 @@ void display(void)
  
 }
 
+double lerp(double a, double b, double t)
+{
+	return (1 - t)*a + t*b;
+}
+
 void idle()
 {
 	static double p = 0;//process parameter
@@ -189,8 +194,13 @@ void idle()
 
 	if (g_anglur_speed_mode == 0) {
 		//liner interpolation
-		if (p < 0.5)g_angle = 160 * p - 40;
-		else g_angle = -160 * p + 120;
+		//if (p < 0.5)g_angle = 160 * p - 40;
+		//else g_angle = -160 * p + 120;
+		double t = 2 * p;
+
+		if(t<1)g_angle = lerp(-40, 40, t);
+		else g_angle = lerp(40, -40, t - 1);
+
 	}
 	else {
 		//sin low

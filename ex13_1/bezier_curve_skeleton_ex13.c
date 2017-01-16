@@ -137,22 +137,29 @@ void BernsteinBasisEvaluation(float t, GLdouble p[3])
 	}
 }
 
-void DeCasteljau(float t, GLdouble points[][3], int size, GLdouble* res) {
-	if (size == 1) {
-		res[0] = points[0][0];
-		res[1] = points[0][1];
-		res[2] = points[0][2];
-		return;
-	}
-	GLdouble next_points[256][3] = { 0 };
+
+void DeCasteljau(GLdouble res[3], float t) {
 	
-	for (int i = 0; i < size-1; ++i)
+	GLdouble points[4][4][3] = { 0 };
+	for (int i = 0; i < number_control_points; ++i)
 	{
-		next_points[i][0] = t*points[i][0] + (1 - t)*points[(i + 1)][0];
-		next_points[i][1] = t*points[i][1] + (1 - t)*points[(i + 1)][1];
-		next_points[i][2] = t*points[i][2] + (1 - t)*points[(i + 1)][2];
+		points[i][0][0] = control_points[i][0];
+		points[i][0][1] = control_points[i][1];
+		points[i][0][2] = control_points[i][2];
 	}
-	DeCasteljau(t, next_points, size - 1, res);
+
+	for (int j = 1; j <= number_control_points-1; ++j)
+	{
+		for (int i = 0; i <= number_control_points-j-1; ++i) {
+			points[i][j][0] = (1-t)*points[i][j-1][0] + t*points[i+1][j-1][0];
+			points[i][j][1] = (1-t)*points[i][j-1][1] + t*points[i+1][j-1][1];
+			points[i][j][2] = (1-t)*points[i][j-1][2] + t*points[i+1][j-1][2];
+		}
+	}
+	res[0] = points[0][number_control_points - 1][0];
+	res[1] = points[0][number_control_points - 1][1];
+	res[2] = points[0][number_control_points - 1][2];
+
 }
 
 /* Plot the cubic Bezier curve using either:
@@ -189,7 +196,8 @@ static void PlotBezierCurve() {
 		for (int i = 0; i <= number_samples; ++i)
 		{
 			float t = (float)i / number_samples;
-			DeCasteljau(t, control_points, number_control_points, point);
+			//DeCasteljau(t, control_points, number_control_points, point);
+			DeCasteljau(point, t);
 			glVertex3dv(point);
 		}
 		glEnd();

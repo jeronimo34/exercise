@@ -325,8 +325,7 @@ void rayTrace(Parameters parameters, int width, int height, GLubyte** texture) {
 			
 			
       // does the ray intersect an object in the scene?
-      hit = 
-          searchIntersectionWithDistanceField(parameters._camera, direction_normalized, &hit_pos, &hit_normal);
+      hit = searchIntersectionWithDistanceField(parameters._camera, direction_normalized, &hit_pos, &hit_normal);
       if (!hit) continue; 
 			
 			
