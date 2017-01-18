@@ -103,8 +103,8 @@ static void LoadShaders() {
   free(vsSource);
   if (success == GL_FALSE) {
     fprintf(stderr, "Error in compiling: simple2.vs.glsl\n");
-    fprintf(stderr, "Error message: %s\n", message);
-    exit(1);
+	fprintf(stderr, "Error message: %s\n", message);
+	exit(1);
   }
   
   

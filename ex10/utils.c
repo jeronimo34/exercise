@@ -113,59 +113,79 @@ void ColorBufferSavePPM(ColorBuffer color_buffer, char* filename)
   fclose(file);
 }
 
-
-void DrawLine(ColorBuffer* buf, int x0, int y0, int x1, int y1, Color c)
+void DrawLineTask1_1(ColorBuffer* buf, LineSegment line)
 {
+//incremental version
+	int y = line.v0.y;
+	int x0 = line.v0.x;
+	int y0 = line.v0.y;
+	int x1 = line.v1.x;
+	int y1 = line.v1.y;
+	float d = (y0 - y1)*(x0+1) + (x1 - x0)*(x0+0.5) + x0*y1 - x1*y0;
+	Color c = line.v0.c;
 	
-	//swap p0(x0,y0), p1(x1,y1)
-	if (x0 > x1) {
-		int tmp = x0;
-		x0 = x1;
-		x1 = tmp;
+	for (int x = x0; x <= x1; x++)
+	{
+		ColorBufferSetPixelColor(buf, y, x, c);
 
-		tmp = y0;
-		y0 = y1;
-		y1 = tmp;
-	}
-
-	int w = buf->width;
-	int h = buf->height;
-	Color* data = buf->data;
-	float tx, ty;
-
-	float slope = (float)(y1 - y0)/(float)(x1 - x0);
-	int sign_y = (slope < 0) ? -1 : 1;
-	int y = y0;
-	int x = x0;
-	
-	if (fabs(slope) <= 1) {
-		for (int x = x0; x <= x1; ++x)
+		if (d < 0)
 		{
-			ColorBufferSetPixelColor(buf, y, x, c);
-			tx = x + 1;
-			ty = (float)y + 0.5*sign_y;
-			float yy = (y0 - y1)*tx + (x1 - x0)*ty + x0*y1 - x1*y0;
-
-			if (sign_y*yy < 0)
-			{
-				y += sign_y;
-			}
+			y++;
+			//f(x+1, y+1) = (y0-y1)*(x+1) + (x1-x0)*(y+1) + x0*y1 - x1*y0;
+			//            = f(x,y) + (y0-y1) + (x1-x0);
+			d += (x1 - x0) + (y0 - y1);
+		}
+		else {
+			d += (y0 - y1);
 		}
 	}
-	else {
-		for(int y = y0;; y+=sign_y)
+}
+
+void swap(int *a, int *b)
+{
+	int t = *a;
+	*a = *b;
+	*b = t;
+}
+
+void DrawLineTask1_2(ColorBuffer* buf, LineSegment line) {
+	int x0 = line.v0.x;
+	int y0 = line.v0.y;
+	int x1 = line.v1.x;
+	int y1 = line.v1.y;
+	Color c = line.v0.c;
+
+	int steep = abs(y1 - y0) > abs(x1 - x0);
+
+	if (steep)
+	{
+		swap(&x0, &y0);
+		swap(&x1, &y1);
+	}
+	if (x0 > x1)
+	{
+		swap(&x0, &x1);
+		swap(&y0, &y1);
+	}
+
+	int deltax = x1 - x0;
+	int deltay = abs(y1 - y0);
+	int error = deltax / 2;
+	int ystep;
+	int y = y0;
+
+	if (y0 < y1)ystep = 1;
+	else ystep = -1;
+
+	for (int x = x0; x <= x1; ++x)
+	{
+		if (steep)ColorBufferSetPixelColor(buf,x, y, c);
+		else ColorBufferSetPixelColor(buf, y, x, c);
+		error = error - deltay;
+		if (error < 0)
 		{
-			ColorBufferSetPixelColor(buf, y, x, c);
-			tx = (float)x + 0.5;
-			ty = y + sign_y;
-			float xx = (x0 - x1)*ty + (y1 - y0)*tx + y0*x1 - y1*x0;
-
-			if (sign_y*xx < 0)
-			{
-				x += 1;
-			}
-
-			if (y == y1)break;
+			y += ystep;
+			error += deltax;
 		}
 	}
 }
@@ -173,29 +193,6 @@ void DrawLine(ColorBuffer* buf, int x0, int y0, int x1, int y1, Color c)
 int orient2D(int x0, int y0, int x1, int y1, int x2, int y2)
 {
 	return (x1 - x0)*(y2 - y0) - (y1 - y0)*(x2 - x0);
-}
-
-void DrawTriangle(ColorBuffer* buf, int x0, int y0, int x1, int y1, int x2, int y2,
-	Color c)
-{
-	int xmin = minf(x0, minf(x1, x2)), ymin = minf(y0, minf(y1, y2));
-	int xmax = maxf(x0, maxf(x1, x2)), ymax = maxf(y0, maxf(y1, y2));
-	int x, y;
-	int w0, w1, w2;
-
-	for (x = xmin; x <= xmax; ++x)
-	{
-		for (y = ymin; y <= ymax; ++y)
-		{
-			w0 = orient2D(x0, y0, x1, y1, x, y);
-			w1 = orient2D(x1, y1, x2, y2, x, y);
-			w2 = orient2D(x2, y2, x0, y0, x, y);
-			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
-			{
-				ColorBufferSetPixelColor(buf, y, x, c);
-			}
-		}
-	}
 }
 
 void DrawTriangleWithDepth(ColorBuffer* buf, Triangle t)
@@ -265,15 +262,17 @@ int main(void) {
   ColorBufferSetPixelColor(&cb, 1, 2, white);
   ColorBufferSetPixelColor(&cb, 2, 2, white);
 
-  DrawLine(&cb, 0, 0, 63, 63, white);
-  DrawLine(&cb, 63, 0, 0, 63, white);
+  LineSegment line0 = { {0,0,0,red},{32, 32, 0, red} },
+	  line1 = { {32,0,0,red},{ 0,32,0,red } };
 
+  DrawLineTask1_1(&cb, line0);
+  DrawLineTask1_2(&cb, line1);
+  
   Triangle tri0 = { { 0,0,1.f,red },{ 63,0,1.f,blue },{ 32,32,1.f,green } },
-		   tri1 = { { 10,0,0.5f,white },{ 53,0,1.5f,white },{ 32,32-8,0.5f,white } };
-
- DrawTriangleWithDepth(&cb, tri0);
- DrawTriangleWithDepth(&cb, tri1);
-
+			   tri1 = { { 10,0,0.5f,white },{ 53,0,1.5f,white },{ 32,32-8,0.5f,white } };
+  DrawTriangleWithDepth(&cb, tri0);
+  DrawTriangleWithDepth(&cb, tri1);
+ 
 
   ColorBufferSavePPM(cb, "test.ppm");
 

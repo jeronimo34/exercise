@@ -154,12 +154,6 @@ static void saveRaw(Color** image, int width, int height, GLubyte** texture) {
   }
 }
 
-
-float lerp(float a, float b, float t)
-{
-	return (1 - t)*a + t*b;
-}
-
 // COMPLETE
 void rayTrace(Scene scene, int width, int height, GLubyte** texture) {
   Color** image;
