@@ -69,7 +69,7 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
   //   sphere
   //   if there is more than one sphere intersected by the ray, save the sphere
   //   with the closest intersection point to the camera
-	float closest_dist = INFINITY, tdist;
+	float closest_dist = INFINITY;
 
 	Vector3 co;
 	float dot;
@@ -78,12 +78,62 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
 	for (int i = 0; i < scene._number_spheres; ++i)
 	{
 		Sphere sphere = scene._spheres[i];
+		Vector3 xray, xint, xsph, uray, usph;
+		float a, b2, c2, d2,d, radius, a_d0, a_d1, a_d;
+
+		radius = sphere._radius;
+		uray = direction;
+		xsph = sphere._center;
+		xray = scene._camera;
+
+		//compute a
+		sub(xsph, xray, &usph);
+		computeDotProduct(uray, usph, &a);//a
+
+		//compute c2
+		computeDotProduct(usph, usph, &c2);//c*c
+
+		//compute b2
+		b2 = c2 - a*a;
+
+		//d2
+		d2 = radius*radius - b2;
+
+		//no intersection
+		if (d2 < 0)continue;
+		d = sqrt(d2);
+		a_d0 = a - d;
+		a_d1 = a + d;
+
+		if (a_d0 < 0 && a_d1 < 0)continue;
+		else if (a_d0 < 0)a_d = a_d1;
+		else if (a_d1 < 0)a_d = a_d0;
+		else a_d = min(a_d0, a_d1);
+
+		if (a_d < closest_dist) {
+			//update intersection object
+			closest_dist = a_d;
+
+			//compute intersection point
+			mulAV(a_d, uray, &xint);
+			add(xint, xray, &xint);//tyuui
+			*hit_pos = xint;//tyuui
+
+			//compute normal vector
+			sub(xint, xsph, hit_normal);
+			normalize(*hit_normal, hit_normal);
+
+			//get material color from intersection object.
+			*hit_color = sphere._color;
+			*hit_spec = sphere._color_spec;
+		}
+
+		/*
 		Vector3 origin = scene._camera;
-		Vector3 temp_hit_pos;
 		float radius = sphere._radius;
 		float ts, te, t;
 		
-		sub(sphere._center, origin, &co);
+		sub(sphere._center, origin, &co);//ther vector of camera to sphere center.
 		computeDotProduct(co, co, &D);//c*c
 		computeDotProduct(direction, co, &dot);//a
 		D = radius*radius-(D - dot*dot);//r*r - (c*c-a*a)
@@ -99,31 +149,31 @@ static int searchIntersectionWithScene(Scene scene, Vector3 direction, Vector3* 
 		else if (te < 0)t = ts;
 		else t = min(te, ts);
 		
-		//get temp_hit_pos
-		mulAV(t, direction, &temp_hit_pos);
-		add(temp_hit_pos, origin, &temp_hit_pos);
-		computeNorm(temp_hit_pos, &tdist);
-
 		//intersect object.
-		if (tdist <= closest_dist)
+		if (t <= closest_dist)
 		{
-			closest_dist = tdist;
+			//get hitpos
+			mulAV(t, direction, hit_pos);
+			add(*hit_pos, origin, hit_pos);
 
 			// Determine the intersection coordinates and the normal to the surface
 			// at the intersection point
-			(*hit_pos) = temp_hit_pos;
 			sub(*hit_pos, sphere._center, hit_normal);
 			normalize(*hit_normal, hit_normal);
 
 			// Save the color of the intersected sphere in hit_color and hit_spec
 			*hit_color = sphere._color;
 			*hit_spec = sphere._color_spec;
+			
+			closest_dist = t;
 		}
+		*/
 	}
 
-	if (closest_dist != INFINITY)return 1;
 	//no intersection.
-	return 0;
+	if (closest_dist == INFINITY)return 0;
+
+	return 1;
 }
 
 
