@@ -38,7 +38,7 @@ enum Mode { ROTATION=1, TRANSLATION=3 } g_mode=1;
 // Store the triangle mesh
 TriangleMesh g_tri_mesh;
 
-const char* mesh_fname = "./data/sphere.off";
+const char* mesh_fname = "./data/teapot.off";
 
 // COMPLETE
 // init the mesh data-structure from the specified (as argument)
@@ -186,18 +186,27 @@ void display()
   Vector3* verts = g_tri_mesh._vertices;
   Triple* tris = g_tri_mesh._triangles;
   Vector3* normals = g_tri_mesh._vertex_normals;
+  Vector3* tri_normals = g_tri_mesh._triangle_normals;
 
   for (i = 0; i < num_tris; ++i)
   {
 	  glBegin(GL_TRIANGLES);
-	  glNormal3f(normals[tris[i]._v0]._x, normals[tris[i]._v0]._y, normals[tris[i]._v0]._z);
-	  glVertex3f(verts[tris[i]._v0]._x, verts[tris[i]._v0]._y, verts[tris[i]._v0]._z);
+	  if (g_flat == 0) {
+		  glNormal3f(normals[tris[i]._v0]._x, normals[tris[i]._v0]._y, normals[tris[i]._v0]._z);
+		  glVertex3f(verts[tris[i]._v0]._x, verts[tris[i]._v0]._y, verts[tris[i]._v0]._z);
 
-	  glNormal3f(normals[tris[i]._v1]._x, normals[tris[i]._v1]._y, normals[tris[i]._v1]._z);
-	  glVertex3f(verts[tris[i]._v1]._x, verts[tris[i]._v1]._y, verts[tris[i]._v1]._z);
-	  
-	  glNormal3f(normals[tris[i]._v2]._x, normals[tris[i]._v2]._y, normals[tris[i]._v2]._z);
-	  glVertex3f(verts[tris[i]._v2]._x, verts[tris[i]._v2]._y, verts[tris[i]._v2]._z);
+		  glNormal3f(normals[tris[i]._v1]._x, normals[tris[i]._v1]._y, normals[tris[i]._v1]._z);
+		  glVertex3f(verts[tris[i]._v1]._x, verts[tris[i]._v1]._y, verts[tris[i]._v1]._z);
+
+		  glNormal3f(normals[tris[i]._v2]._x, normals[tris[i]._v2]._y, normals[tris[i]._v2]._z);
+		  glVertex3f(verts[tris[i]._v2]._x, verts[tris[i]._v2]._y, verts[tris[i]._v2]._z);
+	  }
+	  else {
+		  glNormal3f(tri_normals[i]._x, tri_normals[i]._y, tri_normals[i]._z);
+		  glVertex3f(verts[tris[i]._v0]._x, verts[tris[i]._v0]._y, verts[tris[i]._v0]._z);
+		  glVertex3f(verts[tris[i]._v1]._x, verts[tris[i]._v1]._y, verts[tris[i]._v1]._z);
+		  glVertex3f(verts[tris[i]._v2]._x, verts[tris[i]._v2]._y, verts[tris[i]._v2]._z);
+	  }
 	  glEnd();
   }
 
